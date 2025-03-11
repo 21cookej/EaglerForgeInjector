@@ -6,7 +6,7 @@ globalThis.modapi_guikit = "(" + (() => {
     "Now with A.I.D.S (automatically injected dedicated server)",
     "Only causes death 90% of the time!",
     "HTML is better.",
-    "https://github.com/EaglerForge",
+    "https://21cookej.github.io/EaglerforgeInjector",
     "hey you should check out https://github.com/ZXMushroom63/scratch-gui",
     "99% of people stop gambling before they win big.",
     "Now with free estradiol!",
