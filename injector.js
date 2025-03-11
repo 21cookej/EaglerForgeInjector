@@ -1,4 +1,4 @@
-globalThis.ModAPIVersion = "v2.7.1";
+globalThis.ModAPIVersion = "V4";
 globalThis.doEaglerforge = true;
 document.querySelector("title").innerText = `EaglerForge Injector ${ModAPIVersion}`;
 document.querySelector("h1").innerText = `EaglerForge Injector ${ModAPIVersion}`;
@@ -307,7 +307,7 @@ var main;(function(){`
     \<script id="libserverside"\>{"._|_libserverside_|_."}\<\/script\>
     \<script id="__eaglerforgeinjector_installation_flag__"\>console.log("Thank you for using EaglerForge!");\<\/script\>`
     );
-    patchedFile = patchedFile.replace(`<title>EaglercraftX 1.8</title>`, `<title>EFI ${globalThis.ModAPIVersion}</title>`);
+    patchedFile = patchedFile.replace(`<title>EaglercraftX 1.8</title>`, `<title>EaglerForge Injector ${globalThis.ModAPIVersion}</title>`);
     patchedFile = patchedFile.replaceAll(/main\(\);\s*?}/gm, (match) => {
         return match.replace("main();", "main();ModAPI.hooks._postInit();");
     });
