@@ -3,15 +3,7 @@ globalThis.modapi_guikit = "(" + (() => {
   // ModAPI GUI made by TheIdiotPlays
   // https://github.com/TheIdiotPlays
   var splashes = [
-    "Now with A.I.D.S (automatically injected dedicated server)",
-    "Only causes death 90% of the time!",
-    "HTML is better.",
-    "https://21cookej.github.io/EaglerforgeInjector/",
-    "hey you should check out https://github.com/ZXMushroom63/scratch-gui",
-    "99% of people stop gambling before they win big.",
-    "Now with free estradiol!",
-    "Now with H.I.V (Hyper Injected Virtual-debugger)",
-    "asdasd"
+    "Try RaftClient V4"
   ];
   var gui = `<div id="modapi_gui_container">
       <header>
@@ -21,7 +13,6 @@ globalThis.modapi_guikit = "(" + (() => {
            {splash_msg}
         </h4>
         <h5>
-          Warning: installing malicious mods can delete your worlds, ip-grab you, or even download more serious malware onto your computer. The EaglerForge developers are not liable for any damage caused by the use of EaglerForge and its related tools.
         </h5>
       </header>
 
@@ -52,14 +43,14 @@ globalThis.modapi_guikit = "(" + (() => {
 
       <footer>
         <p>
-          GUI by <a href="https://github.com/TheIdiotPlays">TheIdiotPlays</a>
+          GUI by <a href="https://github.com/21Cookej">Death</a>
         </p>
         <p>
           Modloader linker by
-          <a href="https://github.com/ZXMushroom63">ZXMushroom63</a>
+          <a href="https://github.com/21Cookej">Death</a>
         </p>
         <p>
-          API by <a href="https://github.com/ZXMushroom63">ZXMushroom63,</a> <a href="https://leah.chromebooks.lol">Leah Anderson,</a> and <a href="https://github.com/radmanplays">radmanplays</a>
+          API by <a href="https://github.com/21Cookej">Death,</a>
         </p>
       </footer>
 
