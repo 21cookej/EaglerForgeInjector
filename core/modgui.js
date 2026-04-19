@@ -258,16 +258,22 @@ const modapi_guikit = "(" + (() => {
   function fallbackName(modtxt) {
     if (!modtxt) return "Unknown Mod";
 
-    // URL fallback
     if (modtxt.startsWith("http")) {
       const end = modtxt.split("/").pop();
       return ".../" + end;
     }
 
-    // Filename fallback
     if (modtxt.endsWith(".js")) return modtxt;
 
-    return "Unknown Mod";
+    if (modtxt.length > 125) {
+      try {
+        const m = modtxt.match(/data:text\/\S+?;fs=\S+;/m);
+        if (m && m[0]) return m[0];
+      } catch (e) {}
+      return "Unknown Mod.";
+    }
+
+    return modtxt;
   }
 
   function shorten(str, max = 22) {
@@ -317,30 +323,21 @@ const modapi_guikit = "(" + (() => {
     const mods = await getMods();
     const list = document.getElementById("modlist_entries");
 
-    const metaHashes = Object.keys(ModAPI.meta._titleMap);
-
     let first = null;
 
     mods.forEach((modtxt, index) => {
       if (!modtxt) return;
 
-      // Try to match metadata by scanning for title text
-      let hash = null;
+      const hash = ModAPI.util.hashCode(modtxt);
 
-      for (const h of metaHashes) {
-        const title = ModAPI.meta._titleMap[h];
-        if (title && modtxt.includes(title)) {
-          hash = h;
-          break;
-        }
-      }
+      let hasMeta = !!ModAPI.meta._titleMap[hash];
 
-      const title = hash ? ModAPI.meta._titleMap[hash] : fallbackName(modtxt);
-      const version = hash ? ModAPI.meta._versionMap[hash] || "" : "";
-      const developer = hash ? ModAPI.meta._developerMap[hash] || "" : "";
-      const description = hash ? ModAPI.meta._descriptionMap[hash] || "" : "";
-      const icon = hash ? ModAPI.meta._iconMap[hash] || null : null;
-      const credits = hash ? ModAPI.meta._creditsMap[hash] || developer : null;
+      const title = hasMeta ? ModAPI.meta._titleMap[hash] : fallbackName(modtxt);
+      const version = hasMeta ? (ModAPI.meta._versionMap[hash] || "") : "";
+      const developer = hasMeta ? (ModAPI.meta._developerMap[hash] || "") : "";
+      const description = hasMeta ? (ModAPI.meta._descriptionMap[hash] || "") : "";
+      const icon = hasMeta && ModAPI.meta._iconMap ? (ModAPI.meta._iconMap[hash] || null) : null;
+      const credits = hasMeta && ModAPI.meta._creditsMap ? (ModAPI.meta._creditsMap[hash] || developer) : null;
 
       const entry = document.createElement("div");
       entry.className = "mod_entry";
