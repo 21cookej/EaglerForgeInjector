@@ -1,12 +1,5 @@
 const modapi_guikit = "(" + (() => {
 
-  // Fabric‑style Mod Manager for EaglerForge
-  // Original GUI by TheIdiotPlays
-  // Modloader linker by ZXMushroom63
-  // API by ZXMushroom63, Leah Anderson, radmanplays
-  // Enhanced and redesigned by 21CookeJ
-  // Addition of asnycsink included coming soon
-
   const splashMessages = [
     "EaglerForge Mod Loader",
     "Powered by ModAPI",
@@ -31,12 +24,19 @@ const modapi_guikit = "(" + (() => {
 
       <section class="details">
         <div id="details_panel" class="details_panel">
-          <h2 class="details_title">No mod selected</h2>
-          <h4 class="details_author"></h4>
+          <div class="details_header">
+            <img id="details_icon" class="details_icon" src="" />
+            <div class="details_header_text">
+              <h2 class="details_title">No mod selected</h2>
+              <h4 class="details_author"></h4>
+            </div>
+          </div>
 
           <div class="details_meta">
             <p><strong>Description:</strong></p>
-            <p id="details_description" class="details_desc_long">Select a mod from the list to view its details.</p>
+            <p id="details_description" class="details_desc_long">
+              Select a mod from the list to view its details.
+            </p>
 
             <p><strong>URL:</strong> <span id="details_url">None</span></p>
             <p><strong>Credits:</strong> <span id="details_credits">Unknown</span></p>
@@ -66,7 +66,6 @@ const modapi_guikit = "(" + (() => {
     </footer>
 
     <style>
-
       :root {
         --bg: #1e1e1e;
         --panel: #2a2a2a;
@@ -74,7 +73,6 @@ const modapi_guikit = "(" + (() => {
         --text: #ffffff;
         --sub: #bdbdbd;
 
-        /* Your button textures */
         --btn-normal: url("https://i.postimg.cc/633JpTtp/pixil-frame-0.png");
         --btn-hover: url("https://i.postimg.cc/NMMqjLBf/pixil-frame-0-(1).png");
         --btn-active: url("https://i.postimg.cc/nzzbhMpV/pixil-frame-0-(2).png");
@@ -135,6 +133,21 @@ const modapi_guikit = "(" + (() => {
         padding: 8px 12px;
         border-bottom: 1px solid #111;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mod_entry_icon {
+        width: 24px;
+        height: 24px;
+        image-rendering: pixelated;
+        flex-shrink: 0;
+      }
+
+      .mod_entry_text {
+        display: flex;
+        flex-direction: column;
       }
 
       .mod_entry:hover {
@@ -155,9 +168,29 @@ const modapi_guikit = "(" + (() => {
         padding: 16px;
       }
 
+      .details_header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .details_icon {
+        width: 48px;
+        height: 48px;
+        image-rendering: pixelated;
+        display: none;
+      }
+
       .details_title {
         margin: 0;
         font-size: 1.3rem;
+      }
+
+      .details_author {
+        margin: 2px 0 0 0;
+        font-size: 0.9rem;
+        color: var(--sub);
       }
 
       .details_meta p {
@@ -170,7 +203,6 @@ const modapi_guikit = "(" + (() => {
         color: var(--text);
       }
 
-      /* BUTTONS — 160×32, texture-ready */
       .btn {
         width: 160px;
         height: 32px;
@@ -212,7 +244,6 @@ const modapi_guikit = "(" + (() => {
       footer a {
         color: #3fa6ff;
       }
-
     </style>
 
   </div>`;
@@ -221,14 +252,29 @@ const modapi_guikit = "(" + (() => {
     document.querySelectorAll(".mod_entry").forEach(e => e.classList.remove("selected"));
     entry.classList.add("selected");
 
-    document.querySelector(".details_title").textContent = info.title;
-    document.querySelector(".details_author").textContent = info.developer ? "By " + info.developer : "";
-    document.getElementById("details_description").textContent = info.description || "No description.";
-    document.getElementById("details_url").textContent = info.url || "None";
-    document.getElementById("details_credits").textContent = info.credits || info.developer || "Unknown";
+    const titleEl = document.querySelector(".details_title");
+    const authorEl = document.querySelector(".details_author");
+    const descEl = document.getElementById("details_description");
+    const urlEl = document.getElementById("details_url");
+    const creditsEl = document.getElementById("details_credits");
+    const iconEl = document.getElementById("details_icon");
+
+    titleEl.textContent = info.title;
+    authorEl.textContent = info.developer ? "By " + info.developer : "";
+    descEl.textContent = info.description || "No description.";
+    urlEl.textContent = info.url || "None";
+    creditsEl.textContent = info.credits || info.developer || "Unknown";
+
+    if (info.icon) {
+      iconEl.src = info.icon;
+      iconEl.style.display = "block";
+    } else {
+      iconEl.style.display = "none";
+    }
   }
 
   window.modapi_displayModGui = async function (cb) {
+    if (!getMods) return;
 
     if (document.querySelector("#modapi_gui_container")) {
       cb ||= document.querySelector("#modapi_gui_container")._cb;
@@ -246,23 +292,38 @@ const modapi_guikit = "(" + (() => {
 
     let first = null;
 
-    mods.forEach((txt) => {
-      if (!txt) return;
+    mods.forEach((modtxt, i) => {
+      if (!modtxt) return;
 
-      const hash = ModAPI.util.hashCode(txt);
-
-      const entry = document.createElement("div");
-      entry.className = "mod_entry";
+      const hash = ModAPI.util.hashCode(modtxt);
 
       const title = ModAPI.meta._titleMap[hash] || "Unknown Mod";
       const version = ModAPI.meta._versionMap[hash] || "";
       const developer = ModAPI.meta._developerMap[hash] || "";
       const description = ModAPI.meta._descriptionMap[hash] || "";
+      const icon = ModAPI.meta._iconMap ? ModAPI.meta._iconMap[hash] : null;
 
-      entry.innerHTML = `
+      const entry = document.createElement("div");
+      entry.className = "mod_entry";
+
+      const iconImg = document.createElement("img");
+      iconImg.className = "mod_entry_icon";
+      if (icon) {
+        iconImg.src = icon;
+        iconImg.style.display = "block";
+      } else {
+        iconImg.style.display = "none";
+      }
+
+      const textWrap = document.createElement("div");
+      textWrap.className = "mod_entry_text";
+      textWrap.innerHTML = `
         <div>${title}</div>
         <div style="font-size:0.8rem;color:#bdbdbd">${version}</div>
       `;
+
+      entry.appendChild(iconImg);
+      entry.appendChild(textWrap);
 
       const info = {
         title,
@@ -270,7 +331,8 @@ const modapi_guikit = "(" + (() => {
         developer,
         description,
         url: null,
-        credits: null
+        credits: null,
+        icon
       };
 
       entry.onclick = () => selectMod(entry, info);
