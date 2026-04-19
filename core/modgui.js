@@ -7,6 +7,78 @@ const modapi_guikit = "(" + (() => {
     "Manage Your Mods"
   ];
 
+  function extractMetadata(modtxt) {
+    const hash = ModAPI.util.hashCode(modtxt);
+
+    // 1. Try original hash-based metadata
+    if (ModAPI.meta._titleMap && ModAPI.meta._titleMap[hash]) {
+      return {
+        title: ModAPI.meta._titleMap[hash],
+        version: (ModAPI.meta._versionMap && ModAPI.meta._versionMap[hash]) || "",
+        developer: (ModAPI.meta._developerMap && ModAPI.meta._developerMap[hash]) || "",
+        description: (ModAPI.meta._descriptionMap && ModAPI.meta._descriptionMap[hash]) || "",
+        icon: (ModAPI.meta._iconMap && ModAPI.meta._iconMap[hash]) || null,
+        credits: (ModAPI.meta._creditsMap && ModAPI.meta._creditsMap[hash]) || ""
+      };
+    }
+
+    // 2. Scan mod text for metadata calls
+    const meta = {
+      title: null,
+      version: "",
+      developer: "",
+      description: null,
+      icon: null,
+      credits: ""
+    };
+
+    const titleMatch = modtxt.match(/ModAPI\.meta\.title\(["'`](.*?)["'`]\)/);
+    if (titleMatch) meta.title = titleMatch[1];
+
+    const descMatch = modtxt.match(/ModAPI\.meta\.description\(["'`](.*?)["'`]\)/);
+    if (descMatch) meta.description = descMatch[1];
+
+    const iconMatch = modtxt.match(/ModAPI\.meta\.icon\(["'`](data:image\/.*?)[\"'`]\)/);
+    if (iconMatch) meta.icon = iconMatch[1];
+
+    const creditsMatch = modtxt.match(/ModAPI\.meta\.credits\(["'`](.*?)["'`]\)/);
+    if (creditsMatch) meta.credits = creditsMatch[1];
+
+    const devMatch = modtxt.match(/ModAPI\.meta\.developer\(["'`](.*?)["'`]\)/);
+    if (devMatch) meta.developer = devMatch[1];
+
+    if (meta.title) return meta;
+
+    // 3. No metadata
+    return null;
+  }
+
+  function fallbackName(modtxt) {
+    if (!modtxt) return "Unknown Mod";
+
+    if (modtxt.startsWith("http")) {
+      const end = modtxt.split("/").pop() || modtxt;
+      return ".../" + end;
+    }
+
+    if (modtxt.endsWith(".js")) return modtxt;
+
+    if (modtxt.length > 125) {
+      try {
+        const m = modtxt.match(/data:text\/\S+?;fs=\S+;/m);
+        if (m && m[0]) return m[0];
+      } catch (e) {}
+      return "Unknown Mod.";
+    }
+
+    return modtxt;
+  }
+
+  function shorten(str, max = 22) {
+    if (!str) return "";
+    return str.length > max ? str.slice(0, max - 3) + "..." : str;
+  }
+
   const gui = `
   <div id="modapi_gui_container">
 
@@ -255,31 +327,6 @@ const modapi_guikit = "(" + (() => {
 
   </div>`;
 
-  function fallbackName(modtxt) {
-    if (!modtxt) return "Unknown Mod";
-
-    if (modtxt.startsWith("http")) {
-      const end = modtxt.split("/").pop();
-      return ".../" + end;
-    }
-
-    if (modtxt.endsWith(".js")) return modtxt;
-
-    if (modtxt.length > 125) {
-      try {
-        const m = modtxt.match(/data:text\/\S+?;fs=\S+;/m);
-        if (m && m[0]) return m[0];
-      } catch (e) {}
-      return "Unknown Mod.";
-    }
-
-    return modtxt;
-  }
-
-  function shorten(str, max = 22) {
-    return str.length > max ? str.slice(0, max - 3) + "..." : str;
-  }
-
   function selectMod(entry, info, index) {
     document.querySelectorAll(".mod_entry").forEach(e => e.classList.remove("selected"));
     entry.classList.add("selected");
@@ -328,16 +375,25 @@ const modapi_guikit = "(" + (() => {
     mods.forEach((modtxt, index) => {
       if (!modtxt) return;
 
-      const hash = ModAPI.util.hashCode(modtxt);
+      const meta = extractMetadata(modtxt);
 
-      let hasMeta = !!ModAPI.meta._titleMap[hash];
+      let title, version, developer, description, icon, credits;
 
-      const title = hasMeta ? ModAPI.meta._titleMap[hash] : fallbackName(modtxt);
-      const version = hasMeta ? (ModAPI.meta._versionMap[hash] || "") : "";
-      const developer = hasMeta ? (ModAPI.meta._developerMap[hash] || "") : "";
-      const description = hasMeta ? (ModAPI.meta._descriptionMap[hash] || "") : "";
-      const icon = hasMeta && ModAPI.meta._iconMap ? (ModAPI.meta._iconMap[hash] || null) : null;
-      const credits = hasMeta && ModAPI.meta._creditsMap ? (ModAPI.meta._creditsMap[hash] || developer) : null;
+      if (meta) {
+        title = meta.title;
+        version = meta.version;
+        developer = meta.developer;
+        description = meta.description;
+        icon = meta.icon;
+        credits = meta.credits;
+      } else {
+        title = fallbackName(modtxt);
+        version = "";
+        developer = "";
+        description = "";
+        icon = null;
+        credits = "";
+      }
 
       const entry = document.createElement("div");
       entry.className = "mod_entry";
@@ -402,6 +458,15 @@ const modapi_guikit = "(" + (() => {
     window.modapi_displayModGui();
   };
 
+  async function fileToText(file) {
+    return new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.addEventListener("error", rej);
+      fr.addEventListener("load", () => res(fr.result));
+      fr.readAsText(file);
+    });
+  }
+
   window.modapi_uploadmod = async () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -409,8 +474,9 @@ const modapi_guikit = "(" + (() => {
     input.multiple = true;
 
     input.oninput = async () => {
+      if (input.files.length < 1) return;
       for (const file of input.files) {
-        const text = await file.text();
+        const text = await fileToText(file);
         await addFileMod(file.name, text);
       }
       window.modapi_displayModGui();
