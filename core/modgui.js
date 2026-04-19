@@ -24,6 +24,7 @@ const modapi_guikit = "(" + (() => {
 
       <section class="details">
         <div id="details_panel" class="details_panel">
+
           <div class="details_header">
             <img id="details_icon" class="details_icon" src="" />
             <div class="details_header_text">
@@ -41,6 +42,11 @@ const modapi_guikit = "(" + (() => {
             <p><strong>URL:</strong> <span id="details_url">None</span></p>
             <p><strong>Credits:</strong> <span id="details_credits">Unknown</span></p>
           </div>
+
+          <button id="details_remove" class="btn remove_btn" style="margin-top:12px; display:none;">
+            Remove Mod
+          </button>
+
         </div>
       </section>
 
@@ -61,11 +67,12 @@ const modapi_guikit = "(" + (() => {
     <footer>
       <p>Original GUI: <a href="https://github.com/TheIdiotPlays" target="_blank">TheIdiotPlays</a></p>
       <p>Modloader Linker: <a href="https://github.com/ZXMushroom63" target="_blank">ZXMushroom63</a></p>
-      <p>API: ZXMushroom63, <a href="https://leah.chromebooks.lol" target="_blank">Leah Anderson</a>, <a href="https://github.com/radmanplays" target="_blank">radmanplays</a></p>
+      <p>API: ZXMushroom63, Leah Anderson, radmanplays</p>
       <p>Enhanced by: <a href="https://github.com/21cookej" target="_blank">21CookeJ</a></p>
     </footer>
 
     <style>
+
       :root {
         --bg: #1e1e1e;
         --panel: #2a2a2a;
@@ -248,29 +255,45 @@ const modapi_guikit = "(" + (() => {
 
   </div>`;
 
-  function selectMod(entry, info) {
+  function fallbackName(modtxt) {
+    if (!modtxt) return "Unknown Mod";
+
+    // URL fallback
+    if (modtxt.startsWith("http")) {
+      const end = modtxt.split("/").pop();
+      return ".../" + end;
+    }
+
+    // Filename fallback
+    if (modtxt.endsWith(".js")) return modtxt;
+
+    return "Unknown Mod";
+  }
+
+  function selectMod(entry, info, index) {
     document.querySelectorAll(".mod_entry").forEach(e => e.classList.remove("selected"));
     entry.classList.add("selected");
 
-    const titleEl = document.querySelector(".details_title");
-    const authorEl = document.querySelector(".details_author");
-    const descEl = document.getElementById("details_description");
-    const urlEl = document.getElementById("details_url");
-    const creditsEl = document.getElementById("details_credits");
+    document.querySelector(".details_title").textContent = info.title;
+    document.querySelector(".details_author").textContent = info.developer ? "By " + info.developer : "";
+    document.getElementById("details_description").textContent = info.description || "No description.";
+    document.getElementById("details_url").textContent = info.url || "None";
+    document.getElementById("details_credits").textContent = info.credits || info.developer || "Unknown";
+
     const iconEl = document.getElementById("details_icon");
-
-    titleEl.textContent = info.title;
-    authorEl.textContent = info.developer ? "By " + info.developer : "";
-    descEl.textContent = info.description || "No description.";
-    urlEl.textContent = info.url || "None";
-    creditsEl.textContent = info.credits || info.developer || "Unknown";
-
     if (info.icon) {
       iconEl.src = info.icon;
       iconEl.style.display = "block";
     } else {
       iconEl.style.display = "none";
     }
+
+    const removeBtn = document.getElementById("details_remove");
+    removeBtn.style.display = "block";
+    removeBtn.onclick = async () => {
+      await removeMod(index);
+      window.modapi_displayModGui();
+    };
   }
 
   window.modapi_displayModGui = async function (cb) {
@@ -292,16 +315,17 @@ const modapi_guikit = "(" + (() => {
 
     let first = null;
 
-    mods.forEach((modtxt, i) => {
+    mods.forEach((modtxt, index) => {
       if (!modtxt) return;
 
       const hash = ModAPI.util.hashCode(modtxt);
 
-      const title = ModAPI.meta._titleMap[hash] || "Unknown Mod";
+      const title = ModAPI.meta._titleMap[hash] || fallbackName(modtxt);
       const version = ModAPI.meta._versionMap[hash] || "";
       const developer = ModAPI.meta._developerMap[hash] || "";
       const description = ModAPI.meta._descriptionMap[hash] || "";
       const icon = ModAPI.meta._iconMap ? ModAPI.meta._iconMap[hash] : null;
+      const credits = ModAPI.meta._creditsMap ? ModAPI.meta._creditsMap[hash] : null;
 
       const entry = document.createElement("div");
       entry.className = "mod_entry";
@@ -331,18 +355,18 @@ const modapi_guikit = "(" + (() => {
         developer,
         description,
         url: null,
-        credits: null,
+        credits,
         icon
       };
 
-      entry.onclick = () => selectMod(entry, info);
+      entry.onclick = () => selectMod(entry, info, index);
 
       list.appendChild(entry);
 
-      if (!first) first = { entry, info };
+      if (!first) first = { entry, info, index };
     });
 
-    if (first) selectMod(first.entry, first.info);
+    if (first) selectMod(first.entry, first.info, first.index);
 
     document.querySelector("[data-action='upload']").onclick = window.modapi_uploadmod;
     document.querySelector("[data-action='addurl']").onclick = window.modapi_addmod;
