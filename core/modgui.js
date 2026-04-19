@@ -5,6 +5,7 @@ const modapi_guikit = "(" + (() => {
   // Modloader linker by ZXMushroom63
   // API by ZXMushroom63, Leah Anderson, radmanplays
   // Enhanced and redesigned by 21CookeJ
+  // Addition of asnycsink included coming soon
 
   const splashMessages = [
     "EaglerForge Mod Loader",
