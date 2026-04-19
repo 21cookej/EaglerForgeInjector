@@ -270,6 +270,10 @@ const modapi_guikit = "(" + (() => {
     return "Unknown Mod";
   }
 
+  function shorten(str, max = 22) {
+    return str.length > max ? str.slice(0, max - 3) + "..." : str;
+  }
+
   function selectMod(entry, info, index) {
     document.querySelectorAll(".mod_entry").forEach(e => e.classList.remove("selected"));
     entry.classList.add("selected");
@@ -313,19 +317,30 @@ const modapi_guikit = "(" + (() => {
     const mods = await getMods();
     const list = document.getElementById("modlist_entries");
 
+    const metaHashes = Object.keys(ModAPI.meta._titleMap);
+
     let first = null;
 
     mods.forEach((modtxt, index) => {
       if (!modtxt) return;
 
-      const hash = ModAPI.util.hashCode(modtxt);
+      // Try to match metadata by scanning for title text
+      let hash = null;
 
-      const title = ModAPI.meta._titleMap[hash] || fallbackName(modtxt);
-      const version = ModAPI.meta._versionMap[hash] || "";
-      const developer = ModAPI.meta._developerMap[hash] || "";
-      const description = ModAPI.meta._descriptionMap[hash] || "";
-      const icon = ModAPI.meta._iconMap ? ModAPI.meta._iconMap[hash] : null;
-      const credits = ModAPI.meta._creditsMap ? ModAPI.meta._creditsMap[hash] : null;
+      for (const h of metaHashes) {
+        const title = ModAPI.meta._titleMap[h];
+        if (title && modtxt.includes(title)) {
+          hash = h;
+          break;
+        }
+      }
+
+      const title = hash ? ModAPI.meta._titleMap[hash] : fallbackName(modtxt);
+      const version = hash ? ModAPI.meta._versionMap[hash] || "" : "";
+      const developer = hash ? ModAPI.meta._developerMap[hash] || "" : "";
+      const description = hash ? ModAPI.meta._descriptionMap[hash] || "" : "";
+      const icon = hash ? ModAPI.meta._iconMap[hash] || null : null;
+      const credits = hash ? ModAPI.meta._creditsMap[hash] || developer : null;
 
       const entry = document.createElement("div");
       entry.className = "mod_entry";
@@ -342,7 +357,7 @@ const modapi_guikit = "(" + (() => {
       const textWrap = document.createElement("div");
       textWrap.className = "mod_entry_text";
       textWrap.innerHTML = `
-        <div>${title}</div>
+        <div>${shorten(title)}</div>
         <div style="font-size:0.8rem;color:#bdbdbd">${version}</div>
       `;
 
